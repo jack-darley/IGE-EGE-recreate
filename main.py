@@ -20,7 +20,7 @@ ppi = monitor_width / physical_width_inches
 # mm to Pixel Conversion
 mm2pixel = ppi / 25.4  # Since 1 inch = 25.4 mm
 
-# Set units
+# Set unitss
 unit = "pix"
 
 # Define and save a monitor profile
