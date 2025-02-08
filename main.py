@@ -1,6 +1,7 @@
 from psychopy import visual, monitors, event, core
 import math
 import numpy as np
+import matplotlib.pyplot as plt
 
 # Monitor Specs
 monitor_width = 2560  # in pixels
@@ -43,9 +44,9 @@ win = visual.Window(
 # Sizes
 cursor_radius = mm2pixel * 2
 target_radius = mm2pixel * 4
-start_circle_radius = mm2pixel * 8
+start_circle_radius = mm2pixel * 3
 
-# Create a white circle as the custom cursor
+# Create objects
 true_cursor = visual.Circle(
     win,
     fillColor='white',
@@ -87,7 +88,8 @@ prev_pos = mouse.getPos()
 game_phase = 0
 timer = None
 reset_flag = False
-rot = [-20, 20]  # Possible rotation angles (in degrees)
+rot = [20]  # Possible rotation angles (in degrees)
+hand_rot_data = []
 
 # Variables for phase-based rotation
 last_phase = None       # To detect phase changes
@@ -95,17 +97,13 @@ current_theta = None    # To store the current rotation (in radians)
 
 # Main loop: update cursors until Escape is pressed
 while True:
-    keys = event.getKeys()
-    if 'escape' in keys:
-        break  
-
     # Update the cursor position with the current mouse position
     true_cursor.pos = mouse.getPos()
     mouse_pos = mouse.getPos()
     
     # Check if the game phase has changed; if so, select a new rotation
     if game_phase != last_phase:
-        current_theta = np.radians(np.random.choice(rot))
+        current_theta = np.radians(-np.random.choice(rot))
         last_phase = game_phase
 
     # Compute rotated cursor position using the current rotation angle
@@ -123,11 +121,17 @@ while True:
 
     # Calculate the distance between the true_cursor and start_circle
     curs_to_start = math.sqrt(
-        (true_cursor.pos[0] - start_circle.pos[0])**2 + (true_cursor.pos[1] - start_circle.pos[1])**2
+        (rotated_cursor.pos[0] - start_circle.pos[0])**2 + (rotated_cursor.pos[1] - start_circle.pos[1])**2
     )
     
-    # Game Phase 0: Waiting for the cursor to be within the start circle for 1 second
+    
+
+    # Game Phase 0: START CIRCLE CHECK
     if game_phase == 0:
+
+        cursor_trajectory = []
+        actual_trajectory = []
+
         start_circle.opacity = 1
         target.opacity = 1
 
@@ -135,35 +139,99 @@ while True:
             if timer is None:  # Start the timer only once
                 timer = core.Clock()
             elif timer.getTime() >= 1:  # If 1 second has passed
+                timer = None
                 game_phase = 1  # Move to next phase
-        else:
-            timer = None  # Reset timer if cursor leaves
 
-    # Game Phase 1: Show target and check if cursor is stationary for 2 seconds
+    # Game Phase 1: MOVE
     if game_phase == 1:
         target.draw()
-        true_cursor.draw()
+        rotated_cursor.draw()
+        # true_cursor.draw()
         start_circle.opacity = 0
 
         current_pos = mouse.getPos() 
+        cursor_trajectory.append(rotated_cursor.pos)
+        actual_trajectory.append(true_cursor.pos)
 
-        if np.array_equal(current_pos, prev_pos) and (curs_to_start >= (mm2pixel * 110) / 2):
+        if np.array_equal(current_pos, prev_pos) and (curs_to_start >= (target.pos[1]/2)):
             if timer is None:
                 timer = core.Clock()
-            elif timer.getTime() >= 2:
+            elif timer.getTime() >= 1:
                 target.opacity = 0
+                start_circle.opacity = 1
+                timer = None
                 game_phase = 2
+                
             
         prev_pos = current_pos
         
-    # Game Phase 2: Print once and reset the phase
+    # Game Phase 2: DATA?
     if game_phase == 2:
         if not reset_flag:
+            
             print(prev_pos)
             reset_flag = True
-        game_phase = 0  # Reset to phase 0 (or transition as desired)
+
+        if curs_to_start <= start_circle_radius:
+            hand_rot_data.append((list(actual_trajectory), list(cursor_trajectory)))
+            game_phase = 0  # Move to next phase
+
+    keys = event.getKeys()
+    if 'escape' in keys:
+        break  
 
     # Update the display
     win.flip()
+    
 
 win.close()
+
+# Test trajectory code
+
+# x_vals_cursor, y_vals_cursor = zip(*cursor_trajectory) 
+# x_vals_actual, y_vals_actual = zip(*actual_trajectory) 
+
+# plt.scatter(target.pos[0], target.pos[1], s=500, color='yellow')
+# plt.plot(x_vals_cursor, y_vals_cursor, color='w', lw=4, label="Rotated Cursor")
+# plt.plot(x_vals_actual, y_vals_actual, color='g', lw=4, label="Veridical Trajectory")
+# plt.gca().set_facecolor("black")
+
+# plt.xlim([-100, 100])
+# plt.ylim([min(y_vals_cursor)-20, max(y_vals_cursor)+20])
+# plt.legend()
+# plt.show()
+
+print("Total trials stored:", len(hand_rot_data))
+for i, (actual_traj, rotated_traj) in enumerate(hand_rot_data):
+    print(f"Trial {i}: {len(actual_traj)} actual points, {len(rotated_traj)} rotated points")
+
+plt.figure(figsize=(8, 6))  # Set figure size
+
+for i, (actual_traj, rotated_traj) in enumerate(hand_rot_data):
+    if not actual_traj or not rotated_traj:
+        continue  # Skip empty trials
+
+    print(f"Plotting Trial {i}: {len(actual_traj)} points")  # Debug print
+
+    # Extract X, Y for actual & rotated paths
+    x_vals_actual, y_vals_actual = zip(*actual_traj)  
+    x_vals_cursor, y_vals_cursor = zip(*rotated_traj)  
+
+    plt.plot(x_vals_actual, y_vals_actual, color='g', lw=2, alpha=0.6,
+             label="Veridical Trajectory" if i == 0 else "")
+    plt.plot(x_vals_cursor, y_vals_cursor, color='w', lw=2, alpha=0.6,
+             label="Rotated Cursor" if i == 0 else "")
+
+
+all_y_vals = [y for trial in hand_rot_data for _, y in trial[0]]  # Flatten all Y values
+if all_y_vals:
+    plt.ylim([min(all_y_vals) - 20, max(all_y_vals) + 20])
+
+plt.scatter(target.pos[0], target.pos[1], s=500, color='yellow')
+
+# Set Background and Labels
+plt.gca().set_facecolor("black")
+plt.xlim([-100, 100])
+plt.legend()
+plt.show()
+
