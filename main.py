@@ -49,8 +49,8 @@ start_circle_radius = mm2pixel * 3
 # Create objects
 true_cursor = visual.Circle(
     win,
-    fillColor='white',
-    lineColor='white',
+    fillColor='red',
+    lineColor='red',
     units=unit,
     size=(cursor_radius * 2, cursor_radius * 2)
 )
