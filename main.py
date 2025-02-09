@@ -2,6 +2,9 @@ from psychopy import visual, monitors, event, core
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
+
+df = pd.DataFrame(columns=["Trial", "Mouse X", "Mouse Y", "Cursor X", "Cursor Y"])
 
 # Monitor Specs
 monitor_width = 2560  # in pixels
@@ -88,15 +91,26 @@ prev_pos = mouse.getPos()
 game_phase = 0
 timer = None
 reset_flag = False
-rot = [20]  # Possible rotation angles (in degrees)
-hand_rot_data = []
+rot = [-4, -2, 0, 2, 4]  # Possible rotation angles (in degrees)
+hand_rot_data = [] # mouse pos xy, cursor pos xy
 
 # Variables for phase-based rotation
 last_phase = None       # To detect phase changes
 current_theta = None    # To store the current rotation (in radians)
 
+CURSOR_X_TOTAL_TRAJ = []
+CURSOR_Y_TOTAL_TRAJ = []
+MOUSE_X_TOTAL_TRAJ = []
+MOUSE_Y_TOTAL_TRAJ = []
+TRIALS = []
+
+# Trial counter
+trial = 0
+
 # Main loop: update cursors until Escape is pressed
 while True:
+    
+
     # Update the cursor position with the current mouse position
     true_cursor.pos = mouse.getPos()
     mouse_pos = mouse.getPos()
@@ -123,14 +137,17 @@ while True:
     curs_to_start = math.sqrt(
         (rotated_cursor.pos[0] - start_circle.pos[0])**2 + (rotated_cursor.pos[1] - start_circle.pos[1])**2
     )
-    
-    
+
 
     # Game Phase 0: START CIRCLE CHECK
     if game_phase == 0:
 
-        cursor_trajectory = []
-        actual_trajectory = []
+        # Total trajectory
+        CURSOR_X_TRAJ = []
+        CURSOR_Y_TRAJ = []
+        MOUSE_X_TRAJ = []
+        MOUSE_Y_TRAJ = []
+        trial_num = []
 
         start_circle.opacity = 1
         target.opacity = 1
@@ -150,8 +167,14 @@ while True:
         start_circle.opacity = 0
 
         current_pos = mouse.getPos() 
-        cursor_trajectory.append(rotated_cursor.pos)
-        actual_trajectory.append(true_cursor.pos)
+        CURSOR_X, CURSOR_Y = rotated_cursor.pos
+        MOUSE_X, MOUSE_Y = true_cursor.pos
+
+        trial_num.append(trial)
+        CURSOR_X_TRAJ.append(CURSOR_X)
+        CURSOR_Y_TRAJ.append(CURSOR_Y)
+        MOUSE_X_TRAJ.append(MOUSE_X)
+        MOUSE_Y_TRAJ.append(MOUSE_Y)
 
         if np.array_equal(current_pos, prev_pos) and (curs_to_start >= (target.pos[1]/2)):
             if timer is None:
@@ -167,13 +190,22 @@ while True:
         
     # Game Phase 2: DATA?
     if game_phase == 2:
+        
         if not reset_flag:
+            trial += 1
             
-            print(prev_pos)
+            CURSOR_X_TOTAL_TRAJ.extend(CURSOR_X_TRAJ)
+            CURSOR_Y_TOTAL_TRAJ.extend(CURSOR_Y_TRAJ)
+            MOUSE_X_TOTAL_TRAJ.extend(MOUSE_X_TRAJ)
+            MOUSE_Y_TOTAL_TRAJ.extend(MOUSE_Y_TRAJ)
+
+            TRIALS.extend(trial_num)
+            
+            # print(prev_pos)
             reset_flag = True
 
         if curs_to_start <= start_circle_radius:
-            hand_rot_data.append((list(actual_trajectory), list(cursor_trajectory)))
+            reset_flag = False
             game_phase = 0  # Move to next phase
 
     keys = event.getKeys()
@@ -183,55 +215,17 @@ while True:
     # Update the display
     win.flip()
     
-
+    
 win.close()
 
-# Test trajectory code
 
-# x_vals_cursor, y_vals_cursor = zip(*cursor_trajectory) 
-# x_vals_actual, y_vals_actual = zip(*actual_trajectory) 
+# Save Data
+df["Trial"] = TRIALS
+df["Mouse X"] = MOUSE_X_TOTAL_TRAJ
+df["Mouse Y"] = MOUSE_Y_TOTAL_TRAJ
+df["Cursor X"] = CURSOR_X_TOTAL_TRAJ
+df["Cursor Y"] = CURSOR_Y_TOTAL_TRAJ
 
-# plt.scatter(target.pos[0], target.pos[1], s=500, color='yellow')
-# plt.plot(x_vals_cursor, y_vals_cursor, color='w', lw=4, label="Rotated Cursor")
-# plt.plot(x_vals_actual, y_vals_actual, color='g', lw=4, label="Veridical Trajectory")
-# plt.gca().set_facecolor("black")
-
-# plt.xlim([-100, 100])
-# plt.ylim([min(y_vals_cursor)-20, max(y_vals_cursor)+20])
-# plt.legend()
-# plt.show()
-
-print("Total trials stored:", len(hand_rot_data))
-for i, (actual_traj, rotated_traj) in enumerate(hand_rot_data):
-    print(f"Trial {i}: {len(actual_traj)} actual points, {len(rotated_traj)} rotated points")
-
-plt.figure(figsize=(8, 6))  # Set figure size
-
-for i, (actual_traj, rotated_traj) in enumerate(hand_rot_data):
-    if not actual_traj or not rotated_traj:
-        continue  # Skip empty trials
-
-    print(f"Plotting Trial {i}: {len(actual_traj)} points")  # Debug print
-
-    # Extract X, Y for actual & rotated paths
-    x_vals_actual, y_vals_actual = zip(*actual_traj)  
-    x_vals_cursor, y_vals_cursor = zip(*rotated_traj)  
-
-    plt.plot(x_vals_actual, y_vals_actual, color='g', lw=2, alpha=0.6,
-             label="Veridical Trajectory" if i == 0 else "")
-    plt.plot(x_vals_cursor, y_vals_cursor, color='w', lw=2, alpha=0.6,
-             label="Rotated Cursor" if i == 0 else "")
-
-
-all_y_vals = [y for trial in hand_rot_data for _, y in trial[0]]  # Flatten all Y values
-if all_y_vals:
-    plt.ylim([min(all_y_vals) - 20, max(all_y_vals) + 20])
-
-plt.scatter(target.pos[0], target.pos[1], s=500, color='yellow')
-
-# Set Background and Labels
-plt.gca().set_facecolor("black")
-plt.xlim([-100, 100])
-plt.legend()
-plt.show()
+# Save to CSV
+df.to_csv("data.csv", index=False)
 
