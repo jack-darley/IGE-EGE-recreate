@@ -92,8 +92,6 @@ prev_pos = mouse.getPos()
 game_phase = 0
 timer = None
 reset_flag = False
-rot = [45]  # Possible rotation angles (in degrees)
-hand_rot_data = [] # mouse pos xy, cursor pos xy
 
 # Variables for phase-based rotation
 last_phase = None       # To detect phase changes
@@ -108,9 +106,6 @@ ROTS = []
 
 # Trial counter
 trial = 0
-n_baseline = 5
-n_exposure = 5
-exposore_trials = [n_baseline, n_baseline + n_exposure]
 
 # Main loop: update cursors until Escape is pressed
 while True:
@@ -144,7 +139,6 @@ while True:
 
     # Game Phase 0: START CIRCLE CHECK
     if game_phase == 0:
-
         if trial == ts['trial'].max() - 1: # Fix for final trial
             break
 
@@ -170,7 +164,6 @@ while True:
     if game_phase == 1:
         target.draw()
         rotated_cursor.draw()
-        # true_cursor.draw()
         start_circle.opacity = 0
 
         current_pos = mouse.getPos() 
