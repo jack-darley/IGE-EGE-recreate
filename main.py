@@ -91,7 +91,7 @@ prev_pos = mouse.getPos()
 game_phase = 0
 timer = None
 reset_flag = False
-rot = [-4, -2, 0, 2, 4]  # Possible rotation angles (in degrees)
+rot = [-60]  # Possible rotation angles (in degrees)
 hand_rot_data = [] # mouse pos xy, cursor pos xy
 
 # Variables for phase-based rotation
@@ -103,9 +103,11 @@ CURSOR_Y_TOTAL_TRAJ = []
 MOUSE_X_TOTAL_TRAJ = []
 MOUSE_Y_TOTAL_TRAJ = []
 TRIALS = []
+ROTS = []
 
 # Trial counter
 trial = 0
+exposore_max = 25
 
 # Main loop: update cursors until Escape is pressed
 while True:
@@ -123,7 +125,10 @@ while True:
     # Compute rotated cursor position using the current rotation angle
     rotated_x = mouse_pos[0] * np.cos(current_theta) - mouse_pos[1] * np.sin(current_theta)
     rotated_y = mouse_pos[0] * np.sin(current_theta) + mouse_pos[1] * np.cos(current_theta)
-    rotated_cursor.pos = (rotated_x, rotated_y)
+
+    if trial <= exposore_max:
+        rotated_cursor.pos = (rotated_x, rotated_y)
+    else: rotated_cursor.pos = mouse_pos
     
     # Draw objects
     start_circle.draw()
@@ -147,6 +152,7 @@ while True:
         CURSOR_Y_TRAJ = []
         MOUSE_X_TRAJ = []
         MOUSE_Y_TRAJ = []
+        rot_vals = []
         trial_num = []
 
         start_circle.opacity = 1
@@ -170,7 +176,12 @@ while True:
         CURSOR_X, CURSOR_Y = rotated_cursor.pos
         MOUSE_X, MOUSE_Y = true_cursor.pos
 
+
+        if trial <= exposore_max:
+            rot_vals.append(current_theta)
+        else: rot_vals.append(0)
         trial_num.append(trial)
+        
         CURSOR_X_TRAJ.append(CURSOR_X)
         CURSOR_Y_TRAJ.append(CURSOR_Y)
         MOUSE_X_TRAJ.append(MOUSE_X)
@@ -198,7 +209,7 @@ while True:
             CURSOR_Y_TOTAL_TRAJ.extend(CURSOR_Y_TRAJ)
             MOUSE_X_TOTAL_TRAJ.extend(MOUSE_X_TRAJ)
             MOUSE_Y_TOTAL_TRAJ.extend(MOUSE_Y_TRAJ)
-
+            ROTS.extend(rot_vals)
             TRIALS.extend(trial_num)
             
             # print(prev_pos)
@@ -221,6 +232,7 @@ win.close()
 
 # Save Data
 df["Trial"] = TRIALS
+df["Rotation"] = ROTS
 df["Mouse X"] = MOUSE_X_TOTAL_TRAJ
 df["Mouse Y"] = MOUSE_Y_TOTAL_TRAJ
 df["Cursor X"] = CURSOR_X_TOTAL_TRAJ
