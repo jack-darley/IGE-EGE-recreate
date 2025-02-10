@@ -3,45 +3,89 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import tkinter as tk
+import monitor_select_ui
+from monitor_select_ui import MonitorApp
+
+
+class MonitorSetup:
+    def __init__(self):
+        # # Initialize monitor selection and calculations
+
+        # MONITOR SELECTION
+        root = tk.Tk()
+        app = MonitorApp(root)
+        self.selected_monitor_data = app.get_selected_monitor()
+
+        # MONITOR SPECS
+        self.monitor_width = self.selected_monitor_data["width"]
+        self.monitor_height = self.selected_monitor_data["height"]
+        self.diagonal_inches = self.selected_monitor_data["size"]
+
+        # Aspect Ratio Calculation
+        gcd = math.gcd(self.monitor_width, self.monitor_height)
+        self.aspect_ratio_width = self.monitor_width // gcd
+        self.aspect_ratio_height = self.monitor_height // gcd
+
+        # Corrected Physical Width Calculation
+        self.physical_width_inches = (self.diagonal_inches * self.aspect_ratio_width) / \
+            math.sqrt(self.aspect_ratio_width**2 + self.aspect_ratio_height**2)
+
+        # ppi
+        self.ppi = self.monitor_width / self.physical_width_inches
+
+        # mm to Pixel Conversion
+        self.mm2pixel = self.ppi / 25.4  # Since 1 inch = 25.4 mm
+
+        # Screen Width in cm
+        self.screen_width_cm = (self.diagonal_inches * self.aspect_ratio_height) / \
+            math.sqrt(self.aspect_ratio_width**2 + self.aspect_ratio_height**2)
+
+        # Define and save a monitor profile
+        self.mon = monitors.Monitor(name="MyMonitor")
+        self.mon.setSizePix((self.monitor_width, self.monitor_height))  # Set resolution (width, height in pixels)
+        self.mon.setWidth(self.screen_width_cm)  # Screen width in cm
+        self.mon.setDistance(60)   # Distance in cm
+        self.mon.save()            # Save the settings
+
+        # Set unit
+        self.unit = "pix"
+
+    def get_monitor(self):
+        # return dict of monitor info
+        return {
+            "monitor": self.mon,
+            "width": self.monitor_width,
+            "height": self.monitor_height,
+            "diagonal_inches": self.diagonal_inches,
+            "aspect_ratio": (self.aspect_ratio_width, self.aspect_ratio_height),
+            "screen_width_cm": self.screen_width_cm,
+            "mm2pixel": self.mm2pixel,
+            "unit": self.unit
+        }
+
+# Initialize monitor setup
+monitor_setup = MonitorSetup()
+
+# Get monitor details
+monitor_data = monitor_setup.get_monitor()
+
+# Use monitor information
+mon = monitor_data["monitor"]  # PsychoPy monitor object
+monitor_width = monitor_data["width"]
+monitor_height = monitor_data["height"]
+mm2pixel = monitor_data["mm2pixel"]
+unit = monitor_data["unit"]
 
 # Dataframes
-df = pd.DataFrame(columns=["Trial", "Mouse X", "Mouse Y", "Cursor X", "Cursor Y"]) # data
-ts = pd.read_csv("tgt.csv") # trial schedule
-
-# Monitor Specs
-monitor_width = 2560  # in pixels
-monitor_height = 1080  # in pixels
-diagonal_inches = 29   # in inches
-
-# Aspect Ratio
-aspect_ratio_width = 21 
-aspect_ratio_height = 9 
-
-# Corrected Physical Width Calculation
-physical_width_inches = (diagonal_inches * aspect_ratio_width) / math.sqrt(aspect_ratio_width**2 + aspect_ratio_height**2)
-
-# Pixels Per Inch (PPI)
-ppi = monitor_width / physical_width_inches
-
-# mm to Pixel Conversion
-# 3.78
-mm2pixel = ppi / 25.4  # Since 1 inch = 25.4 mm
-
-# Set unit
-unit = "pix"
-
-# Define and save a monitor profile
-mon = monitors.Monitor(name="MyMonitor")
-mon.setSizePix((monitor_width, monitor_height))  # Set resolution (width, height in pixels)
-mon.setWidth(67.733)  # Screen width in cm
-mon.setDistance(60)   # Distance in cm
-mon.save()            # Save the settings
+df = pd.DataFrame(columns=["Trial", "Mouse X", "Mouse Y", "Cursor X", "Cursor Y"])  # Data
+ts = pd.read_csv("tgt.csv")  # Trial schedule
 
 # Create the PsychoPy window using the monitor name (as a string)
 win = visual.Window(
     size=(monitor_width, monitor_height),  # Actual resolution
-    monitor="MyMonitor",                   # Use the saved monitor profile name
-    fullscr=True,
+    monitor=mon,                   # Use the saved monitor profile name
+    fullscr=False,
     color=(-1, -1, -1),
     colorSpace='rgb',
     units=unit
@@ -232,5 +276,3 @@ df["Cursor Y"] = CURSOR_Y_TOTAL_TRAJ
 
 # Save to CSV
 df.to_csv("data.csv", index=False)
-
-
