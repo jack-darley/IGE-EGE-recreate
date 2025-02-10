@@ -12,9 +12,9 @@ monitor_width = 2560  # in pixels
 monitor_height = 1080  # in pixels
 diagonal_inches = 29   # in inches
 
-# Aspect Ratio Calculation
-aspect_ratio_width = 21  # Standard aspect width for 16:9
-aspect_ratio_height = 9  # Standard aspect height for 16:9
+# Aspect Ratio
+aspect_ratio_width = 21 
+aspect_ratio_height = 9 
 
 # Corrected Physical Width Calculation
 physical_width_inches = (diagonal_inches * aspect_ratio_width) / math.sqrt(aspect_ratio_width**2 + aspect_ratio_height**2)
@@ -225,7 +225,6 @@ while True:
 
     # Update the display
     win.flip()
-    
     
 win.close()
 
