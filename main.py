@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 df = pd.DataFrame(columns=["Trial", "Mouse X", "Mouse Y", "Cursor X", "Cursor Y"])
+trial_schedule = pd.DataFrame(columns=["n_baseline", "n_exposure"])
 
 # Monitor Specs
 monitor_width = 2560  # in pixels
@@ -91,7 +92,7 @@ prev_pos = mouse.getPos()
 game_phase = 0
 timer = None
 reset_flag = False
-rot = [-60]  # Possible rotation angles (in degrees)
+rot = [45]  # Possible rotation angles (in degrees)
 hand_rot_data = [] # mouse pos xy, cursor pos xy
 
 # Variables for phase-based rotation
@@ -107,7 +108,9 @@ ROTS = []
 
 # Trial counter
 trial = 0
-exposore_max = 25
+n_baseline = 5
+n_exposure = 5
+exposore_trials = [n_baseline, n_baseline + n_exposure]
 
 # Main loop: update cursors until Escape is pressed
 while True:
@@ -119,14 +122,14 @@ while True:
     
     # Check if the game phase has changed; if so, select a new rotation
     if game_phase != last_phase:
-        current_theta = np.radians(-np.random.choice(rot))
+        current_theta = np.radians(np.random.choice(rot))
         last_phase = game_phase
 
     # Compute rotated cursor position using the current rotation angle
     rotated_x = mouse_pos[0] * np.cos(current_theta) - mouse_pos[1] * np.sin(current_theta)
     rotated_y = mouse_pos[0] * np.sin(current_theta) + mouse_pos[1] * np.cos(current_theta)
 
-    if trial <= exposore_max:
+    if exposore_trials[0] < trial <= exposore_trials[1]:
         rotated_cursor.pos = (rotated_x, rotated_y)
     else: rotated_cursor.pos = mouse_pos
     
@@ -177,7 +180,7 @@ while True:
         MOUSE_X, MOUSE_Y = true_cursor.pos
 
 
-        if trial <= exposore_max:
+        if exposore_trials[0] < trial <= exposore_trials[1]:
             rot_vals.append(current_theta)
         else: rot_vals.append(0)
         trial_num.append(trial)
@@ -238,6 +241,12 @@ df["Mouse Y"] = MOUSE_Y_TOTAL_TRAJ
 df["Cursor X"] = CURSOR_X_TOTAL_TRAJ
 df["Cursor Y"] = CURSOR_Y_TOTAL_TRAJ
 
+trial_schedule = pd.DataFrame({
+    "n_baseline": [n_baseline], 
+    "n_exposure": [n_exposure]
+})
+
 # Save to CSV
 df.to_csv("data.csv", index=False)
+trial_schedule.to_csv("trial-schedule.csv", index=False)
 
