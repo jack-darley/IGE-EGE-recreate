@@ -4,7 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-df = pd.DataFrame(columns=["Trial", "Mouse X", "Mouse Y", "Cursor X", "Cursor Y"])
+# Dataframes
+df = pd.DataFrame(columns=["Trial", "Mouse X", "Mouse Y", "Cursor X", "Cursor Y"]) # data
 ts = pd.read_csv("tgt.csv") # trial schedule
 
 # Monitor Specs
@@ -23,6 +24,7 @@ physical_width_inches = (diagonal_inches * aspect_ratio_width) / math.sqrt(aspec
 ppi = monitor_width / physical_width_inches
 
 # mm to Pixel Conversion
+# 3.78
 mm2pixel = ppi / 25.4  # Since 1 inch = 25.4 mm
 
 # Set unit
