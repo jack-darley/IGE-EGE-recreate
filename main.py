@@ -50,6 +50,9 @@ cursor_radius = mm2pixel * 2
 target_radius = mm2pixel * 4
 start_circle_radius = mm2pixel * 3
 
+# Target distance
+target_dist = ts["target distance"].unique()
+
 # Create objects
 true_cursor = visual.Circle(
     win,
@@ -73,7 +76,7 @@ target = visual.Circle(
     lineColor='yellow',
     units=unit,
     size=(target_radius * 2, target_radius * 2),
-    pos=(0, mm2pixel * 60)
+    pos=(0, mm2pixel * target_dist)
 )
 
 start_circle = visual.Circle(
@@ -224,7 +227,6 @@ df["Mouse X"] = MOUSE_X_TOTAL_TRAJ
 df["Mouse Y"] = MOUSE_Y_TOTAL_TRAJ
 df["Cursor X"] = CURSOR_X_TOTAL_TRAJ
 df["Cursor Y"] = CURSOR_Y_TOTAL_TRAJ
-
 
 # Save to CSV
 df.to_csv("data.csv", index=False)
