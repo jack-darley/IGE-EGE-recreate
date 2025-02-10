@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 df = pd.DataFrame(columns=["Trial", "Mouse X", "Mouse Y", "Cursor X", "Cursor Y"])
-trial_schedule = pd.DataFrame(columns=["n_baseline", "n_exposure"])
+ts = pd.read_csv("tgt.csv") # trial schedule
 
 # Monitor Specs
 monitor_width = 2560  # in pixels
@@ -114,7 +114,6 @@ exposore_trials = [n_baseline, n_baseline + n_exposure]
 
 # Main loop: update cursors until Escape is pressed
 while True:
-    
 
     # Update the cursor position with the current mouse position
     true_cursor.pos = mouse.getPos()
@@ -122,16 +121,14 @@ while True:
     
     # Check if the game phase has changed; if so, select a new rotation
     if game_phase != last_phase:
-        current_theta = np.radians(np.random.choice(rot))
+        current_theta = np.radians(ts["rotation"][trial])
         last_phase = game_phase
 
     # Compute rotated cursor position using the current rotation angle
     rotated_x = mouse_pos[0] * np.cos(current_theta) - mouse_pos[1] * np.sin(current_theta)
     rotated_y = mouse_pos[0] * np.sin(current_theta) + mouse_pos[1] * np.cos(current_theta)
-
-    if exposore_trials[0] < trial <= exposore_trials[1]:
-        rotated_cursor.pos = (rotated_x, rotated_y)
-    else: rotated_cursor.pos = mouse_pos
+    rotated_cursor.pos = (rotated_x, rotated_y)
+  
     
     # Draw objects
     start_circle.draw()
@@ -149,6 +146,9 @@ while True:
 
     # Game Phase 0: START CIRCLE CHECK
     if game_phase == 0:
+
+        if trial == ts['trial'].max() - 1: # Fix for final trial
+            break
 
         # Total trajectory
         CURSOR_X_TRAJ = []
@@ -179,10 +179,7 @@ while True:
         CURSOR_X, CURSOR_Y = rotated_cursor.pos
         MOUSE_X, MOUSE_Y = true_cursor.pos
 
-
-        if exposore_trials[0] < trial <= exposore_trials[1]:
-            rot_vals.append(current_theta)
-        else: rot_vals.append(0)
+        rot_vals.append(current_theta)
         trial_num.append(trial)
         
         CURSOR_X_TRAJ.append(CURSOR_X)
@@ -241,12 +238,8 @@ df["Mouse Y"] = MOUSE_Y_TOTAL_TRAJ
 df["Cursor X"] = CURSOR_X_TOTAL_TRAJ
 df["Cursor Y"] = CURSOR_Y_TOTAL_TRAJ
 
-trial_schedule = pd.DataFrame({
-    "n_baseline": [n_baseline], 
-    "n_exposure": [n_exposure]
-})
 
 # Save to CSV
 df.to_csv("data.csv", index=False)
-trial_schedule.to_csv("trial-schedule.csv", index=False)
+
 
