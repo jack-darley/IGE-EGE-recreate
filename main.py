@@ -129,7 +129,6 @@ while True:
     rotated_y = mouse_pos[0] * np.sin(current_theta) + mouse_pos[1] * np.cos(current_theta)
     rotated_cursor.pos = (rotated_x, rotated_y)
   
-    
     # Draw objects
     start_circle.draw()
     true_cursor.draw()
@@ -142,7 +141,6 @@ while True:
     curs_to_start = math.sqrt(
         (rotated_cursor.pos[0] - start_circle.pos[0])**2 + (rotated_cursor.pos[1] - start_circle.pos[1])**2
     )
-
 
     # Game Phase 0: START CIRCLE CHECK
     if game_phase == 0:
@@ -195,13 +193,11 @@ while True:
                 start_circle.opacity = 1
                 timer = None
                 game_phase = 2
-                
-            
+
         prev_pos = current_pos
         
     # Game Phase 2: DATA?
     if game_phase == 2:
-        
         if not reset_flag:
             trial += 1
             
@@ -211,8 +207,7 @@ while True:
             MOUSE_Y_TOTAL_TRAJ.extend(MOUSE_Y_TRAJ)
             ROTS.extend(rot_vals)
             TRIALS.extend(trial_num)
-            
-            # print(prev_pos)
+
             reset_flag = True
 
         if curs_to_start <= start_circle_radius:
@@ -225,9 +220,9 @@ while True:
 
     # Update the display
     win.flip()
-    
-win.close()
 
+# Close psychopy window
+win.close()
 
 # Save Data
 df["Trial"] = TRIALS
